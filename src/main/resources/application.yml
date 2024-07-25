@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: xiexing
+    # DataSource Config
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/xiexing
+    username: root
+    password: 123456
+    # session失效时间(分钟)
+  session:
+    timeout: 86400
+  mvc:
+    path match:
+      matching-strategy: ant_path_matcher
+  data:
+    redis:
+      port: 6379
+      host: localhost
+      database: 1
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    session:
+        cookie:
+          domain: localhost
+#  腾讯云cos配置
+cos:
+  client:
+    BUCKET_NAME: xxx
+    SECRET_ID: xx
+    SECRET_KEY: xx
+    PREFIX: xx
+    URL: xx
+    Region: xx
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
+      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.hloong.xiexing.controller    #这里换成你模块下controller包的路径
+
+# knife4j的增强配置，不需要增强可以不配（建议配置一下）
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+logging:
+  level:
+    com.qcloud.cos: OFF  # 关闭 Tencent COS SDK 的日志输出
