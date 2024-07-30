@@ -29,11 +29,11 @@ server:
 cos:
   client:
     BUCKET_NAME: xxx
-    SECRET_ID: xx
-    SECRET_KEY: xx
-    PREFIX: xx
-    URL: xx
-    Region: xx
+    SECRET_ID: xxx
+    SECRET_KEY: xxx
+    PREFIX: xxx
+    URL: xxx
+    Region: xxx
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false

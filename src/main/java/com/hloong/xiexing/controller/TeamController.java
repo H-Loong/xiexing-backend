@@ -25,10 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -63,8 +60,7 @@ public class TeamController {
         if (teamUpdateRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
-        boolean result = teamService.updateTeam(teamUpdateRequest, loginUser);
+        boolean result = teamService.updateTeam(teamUpdateRequest, request);
         if (!result) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新失败");
         }
@@ -92,6 +88,10 @@ public class TeamController {
         // 1、查询队伍列表
         List<TeamUserVO> teamList = teamService.listTeams(teamQuery, isAdmin);
         final List<Long> teamIdList = teamList.stream().map(TeamUserVO::getId).collect(Collectors.toList());
+        if (teamIdList.isEmpty()) {
+            return ResultUtil.success(new ArrayList<>());
+        }
+
         // 2、判断当前用户是否已加入队伍
         QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
         try {
@@ -180,8 +180,8 @@ public class TeamController {
         }
         User loginUser = userService.getLoginUser(request);
         teamQuery.setUserId(loginUser.getId());
-        List<TeamUserVO> teamList = teamService.listTeams(teamQuery, true);
-        return ResultUtil.success(teamList);
+        List<TeamUserVO> teamLists = teamService.countTeamUser(teamQuery);
+        return ResultUtil.success(teamLists);
     }
 
 
@@ -197,23 +197,32 @@ public class TeamController {
         if (teamQuery == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         User loginUser = userService.getLoginUser(request);
+        Long userId = loginUser.getId();
+
+        // 查询用户创建的队伍 ID
+        QueryWrapper<Team> createdTeamsQueryWrapper = new QueryWrapper<>();
+        createdTeamsQueryWrapper.eq("userId", userId);
+        List<Team> createdTeams = teamService.list(createdTeamsQueryWrapper);
+        List<Long> createdTeamIds = createdTeams.stream().map(Team::getId).collect(Collectors.toList());
+
+        // 查询用户已加入的队伍 ID
         QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("userId", loginUser.getId());
+        queryWrapper.eq("userId", userId);
         List<UserTeam> userTeamList = userTeamService.list(queryWrapper);
-        // 取出不重复的队伍 id
-        // teamId userId
-        // 1, 2
-        // 1, 3
-        // 2, 3
-        // result
-        // 1 => 2, 3
-        // 2 => 3
         Map<Long, List<UserTeam>> listMap = userTeamList.stream()
                 .collect(Collectors.groupingBy(UserTeam::getTeamId));
-        List<Long> idList = new ArrayList<>(listMap.keySet());
-        teamQuery.setIdList(idList);
-        List<TeamUserVO> teamList = teamService.listTeams(teamQuery, true);
-        return ResultUtil.success(teamList);
+        List<Long> joinedTeamIds = new ArrayList<>(listMap.keySet());
+
+        // 从已加入的队伍中去除创建的队伍
+        joinedTeamIds.removeAll(createdTeamIds);
+
+        // 设置查询条件
+        teamQuery.setIdList(joinedTeamIds);
+        List<TeamUserVO> teamLists = teamService.countTeamUser(teamQuery);
+
+        return ResultUtil.success(teamLists);
     }
+
 }

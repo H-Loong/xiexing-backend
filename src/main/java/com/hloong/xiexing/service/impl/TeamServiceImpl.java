@@ -20,6 +20,7 @@ import com.hloong.xiexing.mapper.TeamMapper;
 import com.hloong.xiexing.service.UserService;
 import com.hloong.xiexing.service.UserTeamService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -27,11 +28,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author H-Loong
@@ -95,8 +94,8 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userId", userId);
         long hasTeamNum = this.count(queryWrapper);
-        if (hasTeamNum >= 5) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户最多创建 5 个队伍");
+        if (hasTeamNum >= 10) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户最多创建 10 个队伍");
         }
         //4. 插入队伍信息到队伍表
         team.setId(null);
@@ -154,15 +153,15 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                 queryWrapper.eq("userId", userId);
             }
             // 根据状态来查询
-            Integer status = teamQuery.getStatus();
-            TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(status);
-            if (statusEnum == null) {
-                statusEnum = TeamStatusEnum.PUBLIC;
-            }
-            if (!isAdmin && statusEnum.equals(TeamStatusEnum.PRIVATE)) {
-                throw new BusinessException(ErrorCode.NO_AUTH);
-            }
-            queryWrapper.eq("status", statusEnum.getValue());
+//            Integer status = teamQuery.getStatus();
+//            TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(status);
+//            if (statusEnum == null) {
+//                statusEnum = TeamStatusEnum.PUBLIC;
+//            }
+//            if (!isAdmin && statusEnum.equals(TeamStatusEnum.PRIVATE)) {
+//                throw new BusinessException(ErrorCode.NO_AUTH);
+//            }
+//            queryWrapper.eq("status", statusEnum.getValue());
         }
         // 不展示已过期的队伍
         // expireTime is null or expireTime > now()
@@ -189,11 +188,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             }
             teamUserVOList.add(teamUserVO);
         }
+
         return teamUserVOList;
     }
 
     @Override
-    public boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser) {
+    public boolean updateTeam(TeamUpdateRequest teamUpdateRequest, HttpServletRequest request) {
         if (teamUpdateRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -206,7 +206,8 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
         }
         // 只有管理员或者队伍的创建者可以修改
-        if (oldTeam.getUserId() != loginUser.getId() && !userService.isAdmin(loginUser)) {
+        User loginUser = userService.getLoginUser(request);
+        if (!Objects.equals(oldTeam.getUserId(), loginUser.getId()) && !userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(teamUpdateRequest.getStatus());
@@ -254,8 +255,8 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                     QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
                     userTeamQueryWrapper.eq("userId", userId);
                     long hasJoinNum = userTeamService.count(userTeamQueryWrapper);
-                    if (hasJoinNum > 5) {
-                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "最多创建和加入 5 个队伍");
+                    if (hasJoinNum > 10) {
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "最多创建和加入 10 个队伍");
                     }
                     // 不能重复加入已加入的队伍
                     userTeamQueryWrapper = new QueryWrapper<>();
@@ -348,7 +349,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         Team team = getTeamById(id);
         long teamId = team.getId();
         // 校验你是不是队伍的队长
-        if (team.getUserId() != loginUser.getId()) {
+        if (!Objects.equals(team.getUserId(), loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH, "无访问权限");
         }
         // 移除所有加入队伍的关联信息
@@ -390,6 +391,28 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         userTeamQueryWrapper.eq("teamId", teamId);
         return userTeamService.count(userTeamQueryWrapper);
     }
+    /**
+     * 获取某队伍当前人数
+     *
+     * @param
+     * @return
+     */
+    @Override
+    public List<TeamUserVO> countTeamUser(TeamQuery teamQuery) {
+        List<TeamUserVO> teamList = this.listTeams(teamQuery, true);
+        final List<Long> teamIdList = teamList.stream().map(TeamUserVO::getId).collect(Collectors.toList());
+        if (teamIdList.isEmpty()) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        QueryWrapper<UserTeam> userTeamJoinQueryWrapper = new QueryWrapper<>();
+        userTeamJoinQueryWrapper.in("teamId", teamIdList);
+        List<UserTeam> userTeamList = userTeamService.list(userTeamJoinQueryWrapper);
+        // 队伍 id => 加入这个队伍的用户列表
+        Map<Long, List<UserTeam>> teamIdUserTeamList = userTeamList.stream().collect(Collectors.groupingBy(UserTeam::getTeamId));
+        teamList.forEach(team -> team.setHasJoinNum(teamIdUserTeamList.getOrDefault(team.getId(), new ArrayList<>()).size()));
+        return teamList;
+    }
+
 
 }
 

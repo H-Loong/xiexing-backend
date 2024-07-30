@@ -8,6 +8,7 @@ import com.hloong.xiexing.model.domain.request.TeamJoinRequest;
 import com.hloong.xiexing.model.domain.request.TeamQuitRequest;
 import com.hloong.xiexing.model.domain.request.TeamUpdateRequest;
 import com.hloong.xiexing.model.domain.vo.TeamUserVO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public interface TeamService extends IService<Team> {
 
     List<TeamUserVO> listTeams(TeamQuery teamQuery, boolean isAdmin);
 
-    boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser);
+    boolean updateTeam(TeamUpdateRequest teamUpdateRequest, HttpServletRequest request);
 
     boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser);
 
@@ -38,4 +39,6 @@ public interface TeamService extends IService<Team> {
 
     @Transactional(rollbackFor = Exception.class)
     boolean deleteTeam(long id, User loginUser);
+
+    List<TeamUserVO> countTeamUser(TeamQuery teamQuery);
 }
