@@ -5,7 +5,7 @@ package com.hloong.xiexing.constant;
  * @author H-Loong
  *
  */
-public interface userConstant {
+public interface UserConstant {
     /**
      * 用户登录态的key
      */

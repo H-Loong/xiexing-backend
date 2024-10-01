@@ -33,7 +33,7 @@ public class InsertUsersTest {
             User user = new User();
             user.setUsername("test");
             user.setUserAccount("H-Loong");
-            user.setAvatarUrl("https://s2.loli.net/2024/05/26/AKc7g5r9xvRh6MU.jpg");
+            user.setAvatarUrl("https://xiexing-1325079952.cos.ap-beijing.myqcloud.com/avatar/38211719131350917.png");
             user.setGender(0);
             user.setUserPassword("12345678");
             user.setPhone("123");
@@ -43,7 +43,7 @@ public class InsertUsersTest {
             userList.add(user);
         }
         // 20 秒 10 万条
-        //13s
+        //18s
         userService.saveBatch(userList, 10000);
         stopWatch.stop();
         System.out.println(stopWatch.getTotalTimeMillis());
@@ -67,7 +67,7 @@ public class InsertUsersTest {
                 User user = new User();
                 user.setUsername("test");
                 user.setUserAccount("H-Loong");
-                user.setAvatarUrl("https://s2.loli.net/2024/05/26/AKc7g5r9xvRh6MU.jpg");
+                user.setAvatarUrl("https://xiexing-1325079952.cos.ap-beijing.myqcloud.com/avatar/38211719131350917.png");
                 user.setGender(0);
                 user.setUserPassword("12345678");
                 user.setPhone("123");
@@ -87,7 +87,7 @@ public class InsertUsersTest {
             futureList.add(future);
         }
         CompletableFuture.allOf(futureList.toArray(new CompletableFuture[]{})).join();
-        // 20 秒 10 万条
+        // 30 秒 10 万条
         stopWatch.stop();
         System.out.println(stopWatch.getTotalTimeMillis());
     }

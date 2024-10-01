@@ -25,15 +25,19 @@ server:
     session:
         cookie:
           domain: localhost
+          name: SESSION
+          same-site: None
+          secure: false
+
 #  腾讯云cos配置
 cos:
   client:
-    BUCKET_NAME: xxx
-    SECRET_ID: xxx
+    BUCKET_NAME: xxxxxxx
+    SECRETId: xxxxx
     SECRET_KEY: xxx
-    PREFIX: xxx
-    URL: xxx
-    Region: xxx
+    PREFIX: /avatar/
+    URL: xxxx
+    Region: xxxxx
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false

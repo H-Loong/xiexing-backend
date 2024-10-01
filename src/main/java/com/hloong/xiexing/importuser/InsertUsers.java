@@ -18,14 +18,13 @@ public class InsertUsers {
 //    @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE)
     public void doInsertUsers() {
         StopWatch stopWatch = new StopWatch();
-        System.out.println("goodgoodgood");
         stopWatch.start();
         final int INSERT_NUM = 1000;
         for (int i = 0; i < INSERT_NUM; i++) {
             User user = new User();
             user.setUsername("test");
             user.setUserAccount("H-Loong");
-            user.setAvatarUrl("https://s2.loli.net/2024/05/26/AKc7g5r9xvRh6MU.jpg");
+            user.setAvatarUrl("https://xiexing-1325079952.cos.ap-beijing.myqcloud.com/avatar/38211719131350917.png");
             user.setGender(0);
             user.setUserPassword("12345678");
             user.setPhone("123");
